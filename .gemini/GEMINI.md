@@ -253,7 +253,7 @@ suite('SuperSnap Extension Test Suite', () => {
 pnpm run test
 ```
 
-Or use the VS Code test explorer.
+Always run the full test suite after making changes to ensure that existing functionality remains intact.
 
 ---
 
@@ -365,6 +365,7 @@ When working on this codebase:
 6. **Test with `F5`** before committing changes
 7. **Run `pnpm run compile`** to catch all errors before suggesting changes
 8. **Maintain CSP compliance** when adding external resources
+9. **Always run tests** (`pnpm run test`) after making any changes to ensure no regressions
 
 ---
 
