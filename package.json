@@ -1,0 +1,106 @@
+{
+  "name": "supersnap",
+  "displayName": "SuperSnap - Beautiful Code Screenshots",
+  "description": "Create stunning, customizable screenshots of your code with beautiful gradient backgrounds and macOS-style window chrome.",
+  "version": "0.0.1",
+  "publisher": "your-publisher-name",
+  "author": {
+    "name": "Your Name"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/supersnap"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/supersnap/issues"
+  },
+  "homepage": "https://github.com/yourusername/supersnap#readme",
+  "keywords": [
+    "screenshot",
+    "code",
+    "snippet",
+    "image",
+    "export",
+    "gradient",
+    "beautiful",
+    "share"
+  ],
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "supersnap.start",
+        "title": "SuperSnap: Take Screenshot"
+      }
+    ],
+    "configuration": {
+      "title": "SuperSnap",
+      "properties": {
+        "supersnap.backgroundGradient": {
+          "type": "string",
+          "default": "linear-gradient(140deg, rgb(165, 55, 253), rgb(33, 209, 244))",
+          "description": "CSS linear-gradient string for the snapshot background."
+        },
+        "supersnap.savedPresets": {
+            "type": "array",
+            "default": [],
+            "description": "List of user-saved gradient presets."
+        }
+      }
+    },
+    "problemMatchers": [
+      {
+        "name": "esbuild",
+        "owner": "esbuild",
+        "fileLocation": "relative",
+        "pattern": {
+          "regexp": "^✘ \\[ERROR\\] (.*)$",
+          "message": 1
+        }
+      },
+      {
+        "name": "esbuild-watch",
+        "base": "$esbuild",
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\[watch\\] build started$",
+          "endsPattern": "^\\[watch\\] build finished$"
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.107.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "typescript-eslint": "^8.48.1",
+    "eslint": "^9.39.1",
+    "esbuild": "^0.27.1",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.9.3",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
