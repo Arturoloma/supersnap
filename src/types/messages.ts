@@ -55,13 +55,19 @@ export interface UpdateConfigsMessage {
 }
 
 /**
- * Gradient preset configuration
+ * Shared gradient configuration interface
  */
-export interface GradientPreset {
+export interface GradientConfig {
     color1: string;
     color2: string;
     angle: number;
     showMacHeader: boolean;
+}
+
+/**
+ * Gradient preset configuration
+ */
+export interface GradientPreset extends GradientConfig {
     label?: string;
     isDefault?: boolean;
 }

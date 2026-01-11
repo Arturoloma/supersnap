@@ -115,6 +115,19 @@ async function handleWebviewMessage(message: WebviewMessage, panel: vscode.Webvi
 }
 
 /**
+ * Checks if two presets are equal
+ * @param a - First preset
+ * @param b - Second preset
+ * @returns True if presets are equal
+ */
+function presetsEqual(a: GradientPreset, b: GradientPreset): boolean {
+    return a.color1 === b.color1 && 
+           a.color2 === b.color2 && 
+           a.angle === b.angle && 
+           a.showMacHeader === b.showMacHeader;
+}
+
+/**
  * Handles saving the configuration
  * @param preset - The preset configuration to save
  * @param panel - The webview panel
@@ -124,12 +137,7 @@ async function handleSaveConfiguration(preset: GradientPreset, panel: vscode.Web
     const savedPresets = context.globalState.get<GradientPreset[]>(CONFIG_KEYS.SAVED_PRESETS) || [];
     
     // Check for duplicates
-    const isDuplicate = savedPresets.some(p => 
-        p.color1 === preset.color1 && 
-        p.color2 === preset.color2 && 
-        p.angle === preset.angle && 
-        p.showMacHeader === preset.showMacHeader
-    );
+    const isDuplicate = savedPresets.some(p => presetsEqual(p, preset));
 
     if (isDuplicate) {
         vscode.window.showInformationMessage('SuperSnap: This configuration is already saved!');
@@ -156,12 +164,7 @@ async function handleRemoveConfiguration(preset: GradientPreset, panel: vscode.W
     const savedPresets = context.globalState.get<GradientPreset[]>(CONFIG_KEYS.SAVED_PRESETS) || [];
     
     // Filter out the preset to be removed
-    const newPresets = savedPresets.filter(p => 
-        !(p.color1 === preset.color1 && 
-          p.color2 === preset.color2 && 
-          p.angle === preset.angle &&
-          p.showMacHeader === preset.showMacHeader)
-    );
+    const newPresets = savedPresets.filter(p => !presetsEqual(p, preset));
     
     await context.globalState.update(CONFIG_KEYS.SAVED_PRESETS, newPresets);
     

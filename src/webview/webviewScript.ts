@@ -1,15 +1,33 @@
-// @ts-nocheck
-declare const acquireVsCodeApi: any;
-declare const htmlToImage: any;
+/// <reference lib="dom" />
+declare const acquireVsCodeApi: () => { postMessage: (msg: unknown) => void };
+declare const htmlToImage: { toPng: (node: HTMLElement) => Promise<string> };
+
+interface GradientConfig {
+    color1: string;
+    color2: string;
+    angle: number;
+    showMacHeader: boolean;
+}
+
+interface GradientPreset extends GradientConfig {
+    label?: string;
+    isDefault?: boolean;
+}
 
 export function webviewScript() {
     'use strict';
 
     const vscode = acquireVsCodeApi();
-    const container = document.getElementById('snap-container')!;
-    const codeContent = document.getElementById('code-content')!;
-    const savedPresetsContainer = document.getElementById('saved-presets')!;
+    const container = document.getElementById('snap-container');
+    const codeContent = document.getElementById('code-content');
+    const savedPresetsContainer = document.getElementById('saved-presets');
     
+    // Fail fast if critical elements are missing
+    if (!container || !codeContent || !savedPresetsContainer) {
+        console.error(' Critical elements not found');
+        return;
+    }
+
     const color1Input = document.getElementById('color1') as HTMLInputElement;
     const color2Input = document.getElementById('color2') as HTMLInputElement;
     const angleInput = document.getElementById('angle') as HTMLInputElement;
@@ -19,12 +37,12 @@ export function webviewScript() {
 
     /**
      * Renders the list of presets
-     * @param {Array} presets - List of presets
+     * @param {GradientPreset[]} presets - List of presets
      */
-    function renderSavedPresets(presets: any[]) {
-        savedPresetsContainer.innerHTML = '';
+    function renderSavedPresets(presets: GradientPreset[]) {
+        savedPresetsContainer!.innerHTML = '';
         if (!presets || presets.length === 0) {
-            savedPresetsContainer.innerHTML = '<span style="font-size: 11px; color: #666; font-style: italic;">No presets</span>';
+            savedPresetsContainer!.innerHTML = '<span style="font-size: 11px; color: #666; font-style: italic;">No presets</span>';
             return;
         }
 
@@ -42,8 +60,9 @@ export function webviewScript() {
             
             btn.setAttribute('data-c1', preset.color1);
             btn.setAttribute('data-c2', preset.color2);
-            btn.setAttribute('data-angle', preset.angle);
-            btn.setAttribute('data-machdr', !!preset.showMacHeader);
+            btn.setAttribute('data-angle', preset.angle.toString());
+            // Store boolean as string
+            btn.setAttribute('data-machdr', preset.showMacHeader ? 'true' : 'false');
             
             // Mini-header requirement
             if (preset.showMacHeader) {
@@ -76,12 +95,13 @@ export function webviewScript() {
                 wrapper.appendChild(removeBtn);
             }
 
-            savedPresetsContainer.appendChild(wrapper);
+            savedPresetsContainer!.appendChild(wrapper);
         });
         updatePresetState();
     }
 
     // Initialize saved presets from injected global
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window as any).initialPresets) {
         renderSavedPresets((window as any).initialPresets);
     }
@@ -92,13 +112,13 @@ export function webviewScript() {
         if (message.command === 'updateConfigurations') {
             renderSavedPresets(message.data);
         } else if (message.command === 'triggerPaste') {
-            codeContent.focus();
+            codeContent!.focus();
             document.execCommand('paste');
             vscode.postMessage({ command: 'pasteDone' });
         }
     });
 
-    let debounceTimer: NodeJS.Timeout;
+    let debounceTimer: ReturnType<typeof setTimeout>;
 
     /**
      * Persists the current gradient state to the extension (debounced)
@@ -128,7 +148,9 @@ export function webviewScript() {
         const showHdr = macHeaderToggle.checked;
 
         angleVal.innerText = ang + '°';
-        container.style.background = `linear-gradient(${ang}deg, ${c1}, ${c2})`;
+        if (container) {
+            container.style.background = `linear-gradient(${ang}deg, ${c1}, ${c2})`;
+        }
         titleBar.style.display = showHdr ? 'flex' : 'none';
 
         updatePresetState();
@@ -181,12 +203,13 @@ export function webviewScript() {
     });
 
     // Handle paste event to insert code
-    codeContent.addEventListener('paste', (e) => {
+    codeContent!.addEventListener('paste', (e) => {
         e.preventDefault();
-        const html = e.clipboardData!.getData('text/html');
+        const clipboardData = (e as ClipboardEvent).clipboardData;
+        const html = clipboardData ? clipboardData.getData('text/html') : '';
         if (html) {
-            codeContent.innerHTML = html;
-            const wrapper = codeContent.querySelector('div');
+            codeContent!.innerHTML = html;
+            const wrapper = codeContent!.querySelector('div');
             if (wrapper && wrapper.style.backgroundColor) {
                 (document.querySelector('.window') as HTMLElement).style.backgroundColor = wrapper.style.backgroundColor;
             }
@@ -195,17 +218,32 @@ export function webviewScript() {
 
     // Handle snapshot export
     document.getElementById('snap-btn')!.addEventListener('click', () => {
-        window.getSelection()!.removeAllRanges();
+        const selection = window.getSelection();
+        if (selection) {
+            selection.removeAllRanges();
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         htmlToImage.toPng(container).then((dataUrl: string) => {
             vscode.postMessage({ command: 'saveImage', data: dataUrl });
-        }).catch((err: any) => {
+        }).catch((err: unknown) => {
             console.error('Failed to generate image:', err);
+             // Show user-friendly error in webview
+             const errorMsg = document.createElement('div');
+             errorMsg.className = 'error-toast';
+             errorMsg.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #ff5f56; color: white; padding: 10px 20px; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; animation: fadeIn 0.3s ease-out;';
+             errorMsg.textContent = 'Failed to generate image. Please try again.';
+             document.body.appendChild(errorMsg);
+             setTimeout(() => {
+                 errorMsg.style.opacity = '0';
+                 errorMsg.style.transition = 'opacity 0.5s';
+                 setTimeout(() => errorMsg.remove(), 500);
+             }, 3000);
         });
     });
 
     // Handle Save Configuration
     document.getElementById('save-config-btn')!.addEventListener('click', () => {
-        const config = {
+        const config: GradientConfig = {
             color1: color1Input.value,
             color2: color2Input.value,
             angle: parseInt(angleInput.value),
@@ -215,25 +253,30 @@ export function webviewScript() {
     });
 
     // Remove Modal Logic
-    const dialog = document.getElementById('confirm-dialog') as any; // HTMLDialogElement
+    const dialog = document.getElementById('confirm-dialog');
+    if (!(dialog instanceof HTMLDialogElement)) {
+        console.error('Confirm dialog not found');
+        return;
+    }
+    
     const confirmBtn = document.getElementById('confirm-remove')!;
     const cancelBtn = document.getElementById('cancel-remove')!;
-    let presetToRemove: any = null;
+    let presetToRemove: GradientConfig | null = null;
 
-    function showRemoveModal(preset: any) {
+    function showRemoveModal(preset: GradientConfig) {
         presetToRemove = preset;
-        dialog.showModal();
+        (dialog as HTMLDialogElement).showModal();
     }
 
     cancelBtn.addEventListener('click', () => {
-        dialog.close();
+        (dialog as HTMLDialogElement).close();
         presetToRemove = null;
     });
 
     confirmBtn.addEventListener('click', () => {
         if (presetToRemove) {
             vscode.postMessage({ command: 'removeConfiguration', data: presetToRemove });
-            dialog.close();
+            (dialog as HTMLDialogElement).close();
             presetToRemove = null;
         }
     });

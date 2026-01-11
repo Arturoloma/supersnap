@@ -22,8 +22,11 @@ export const CONFIG_KEYS = {
 /**
  * Default values
  */
+const DEFAULT_ANGLE = 140;
+
 export const DEFAULTS = {
-    GRADIENT: 'linear-gradient(140deg, rgb(165, 55, 253), rgb(33, 209, 244))',
+    ANGLE: DEFAULT_ANGLE,
+    GRADIENT: `linear-gradient(${DEFAULT_ANGLE}deg, rgb(165, 55, 253), rgb(33, 209, 244))`,
     FILE_NAME: 'code-snapshot.png',
     PASTE_DELAY_MS: 150,
     SHOW_MAC_HEADER: true,
