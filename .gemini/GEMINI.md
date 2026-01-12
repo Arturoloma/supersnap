@@ -366,6 +366,8 @@ When working on this codebase:
 7. **Run `pnpm run compile`** to catch all errors before suggesting changes
 8. **Maintain CSP compliance** when adding external resources
 9. **Always run tests** (`pnpm run test`) after making any changes to ensure no regressions
+10. **Always review README.md** after making any changes to ensure it is up to date
+11. **Always review GEMINI.md** after making any changes to ensure it is up to date
 
 ---
 
